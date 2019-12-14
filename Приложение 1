@@ -1,0 +1,39 @@
+! A fortran95 program for G95
+! By WQY
+program main
+  implicit none
+  integer, parameter :: N = 70000
+  integer p
+  real r
+  real pot
+  real,allocatable :: u(:)
+  real,allocatable :: x(:)
+  allocate(u(N))
+  allocate(x(N))
+
+  open(20, file = "pot.txt")
+  p = 1
+  do r = 0,1,0.0007
+    x(p) = r
+    u(p) = pot(r)
+    p = p + 1
+  end do
+
+  do p = 1,N
+        write(20,*) x(p), u(p)
+    end do
+deallocate(x)
+deallocate(u)
+end
+
+real function pot(r)
+    implicit none
+    real r, y
+    real, parameter :: E = 1.06872375, delta = 0.06
+    if (r.lt.delta) then
+        y = 0
+    else
+        y = 4*E*((2.562/r)**12-(2.562/r)**6)
+    end if
+    pot = y
+end function

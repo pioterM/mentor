@@ -1,0 +1,121 @@
+program main
+  implicit none
+  integer i, j, k, p, cou, flag
+
+  integer Nx, Ny, Nz
+  real hx, hy, hz
+  integer N
+  real r
+  real pot
+  real,parameter :: a = 3.16 !данные в 10^-10 м (ангстрем), расстояние между атомами
+  real,allocatable :: x(:)!задает массив
+  real,allocatable :: y(:)
+  real,allocatable :: z(:)
+  real,allocatable :: Efull(:)
+  real,allocatable :: E(:)
+  Nx = 5 !количество атомов
+  Ny = 5
+  Nz = 5
+  N = Nx*Ny*Nz + (Nx-1)*(Ny-1)*(Nz - 1)
+  open(20, file = "WolframFullE centratom 6-55.txt")
+
+  allocate(Efull(50))
+  allocate(E(50))
+
+   do cou = 1, 50
+    write(*,*) cou, " started"
+    !задание значения Nx, Ny, Nz, N в зависимости от итерации
+    Nx = Nx + 1
+    Ny = Ny + 1
+    Nz = Nz + 1
+     N = Nx*Ny*Nz + (Nx-1)*(Ny-1)*(Nz - 1)
+    allocate(x(N)) !открывает работу с массивом
+    allocate(y(N))
+    allocate(z(N))
+
+    !создание решетки с размерами Nx, Ny, Nz
+    x = 0
+    y = 0
+    z = 0
+    p = 1
+    do j = 1,Ny
+        do i = 1,Nx
+            do k = 1,Nz
+            x(p) = (i-1)*a
+            y(p) = (j-1)*a
+            z(p) = (k-1)*a
+            p = p+1
+            end do
+        end do
+    end do
+
+    do j = 1,Ny-1
+        do i = 1,Nx-1
+            do k = 1,Nz-1
+            x(p) = (i-0.5)*a
+            y(p) = (j-0.5)*a
+            z(p) = (k-0.5)*a
+            p = p+1
+            end do
+        end do
+    end do
+
+    hx = (Nz-1)/2 + 1
+    hy = (Nx-1)/2 + 1
+    hz = (Ny-1)/2 + 1
+    !write(20,*) hx, hy, hz
+
+        !вычисление и занесение в массив полной энергии
+        Efull(cou) = 0
+        do j = 1, N
+        do i = 1, N
+            if i \= j then
+                write(*,*) j i
+                r = ( (z(j)-z(i))**2 + (x(j)-x(i))**2 + (y(j)-y(i))**2 )**0.5
+                Efull(cou) = Efull(cou) + pot(r,a)*0.5
+            else
+            end if
+        end do
+        end do
+
+        !вычисление энергии центрального
+        hx = (Nz-1)/2 + 1
+        hy = (Nx-1)/2 + 1
+        hz = (Ny-1)/2 + 1
+
+        E(cou) = 0
+        do i = 1, N
+            r = ( (int(hx)*a-z(i))**2 + (int(hy)*a-x(i))**2 + (int(hz)*a-y(i))**2 )**0.5
+            E(cou) = E(cou) + pot(r,a)
+        end do
+
+    deallocate(y) !закрывает работу с массивом
+    deallocate(x)
+    deallocate(z)
+
+    write(*,*) E(cou), Efull(cou)
+    write(20,*) cou+5, E(cou)/Efull(cou)
+   end do
+
+!вывод - отношения энергий
+    do cou = 1, 50
+        write(20,*) cou+5, E(cou)/Efull(cou)
+    end do
+
+deallocate(Efull)
+deallocate(E)
+end
+
+!функция pot(r) сохраняется, её далее в массиве суммирую
+real function pot(r,a)
+    implicit none
+
+    real r, y,a
+    real, parameter :: E = 1.06872375, delta = 0.06
+    if (r.lt.delta) then
+        y = 0
+    else
+        y = 4*E*((a/r)**12-(a/r)**6)
+    end if
+    pot = y
+end function
